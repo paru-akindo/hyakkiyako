@@ -9,8 +9,9 @@ class MergeGameSimulator:
         self.board = board  # 初期盤面を設定
 
     def display_board(self, board):
-        """盤面をHTMLで表示"""
-        st.write("\n".join(" ".join(str(cell) if cell else "." for cell in row) for row in board))
+        """盤面をHTMLで5×5形式で表示"""
+        for row in board:
+            st.write(" ".join(f"{cell:2}" if cell else " . " for cell in row))
         st.write("---")
 
     def find_clusters(self, board):
@@ -135,19 +136,29 @@ class MergeGameSimulator:
 
 # Streamlit アプリの設定
 st.title("Merge Game Simulator")
-input_data = st.text_input("Enter initial board as a comma-separated string:", "8,8,6,5,6,6,7,8,6,5,9,9,11,5,9,7,8,9,11,8,7,11,8,6,7")
+st.write("Enter the board row by row (comma-separated):")
+
+# 行ごとに入力
+rows = []
+for i in range(BOARD_SIZE):
+    row = st.text_input(f"Row {i + 1}:", "8,8,6,5,6")
+    rows.append(row)
+
 max_value = st.number_input("Enter max value for merging:", min_value=1, value=20)
 simulate_button = st.button("Simulate")
 
 if simulate_button:
-    input_numbers = list(map(int, input_data.split(',')))
-    if len(input_numbers) != BOARD_SIZE * BOARD_SIZE:
-        st.error(f"Input must contain exactly {BOARD_SIZE * BOARD_SIZE} numbers.")
-    else:
-        initial_board = [input_numbers[i:i + BOARD_SIZE] for i in range(0, len(input_numbers), BOARD_SIZE)]
-        simulator = MergeGameSimulator(initial_board)
-        best_action, best_action_human_readable, max_fall_count = simulator.find_best_action(max_value=max_value)
+    try:
+        # 入力された行を解析
+        initial_board = [list(map(int, row.split(','))) for row in rows]
+        if any(len(row) != BOARD_SIZE for row in initial_board):
+            st.error(f"Each row must contain exactly {BOARD_SIZE} numbers.")
+        else:
+            simulator = MergeGameSimulator(initial_board)
+            best_action, best_action_human_readable, max_fall_count = simulator.find_best_action(max_value=max_value)
 
-        st.write(f"Best action: {best_action_human_readable}, Max fall count: {max_fall_count}")
-        st.write("\nSimulation of best action:")
-        simulator.simulate(best_action, max_value=max_value)
+            st.write(f"Best action: {best_action_human_readable}, Max fall count: {max_fall_count}")
+            st.write("\nSimulation of best action:")
+            simulator.simulate(best_action, max_value=max_value)
+    except ValueError:
+        st.error("Invalid input! Please enter integers separated by commas.")
