@@ -1,5 +1,6 @@
 import streamlit as st
 import copy
+from contextlib import redirect_stdout
 
 # 定数
 BOARD_SIZE = 5
