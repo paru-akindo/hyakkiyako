@@ -105,6 +105,35 @@ class MergeGameSimulator:
 
         return fall_count, board
 
+    def find_best_action(self, max_value=20):
+        """最適なユーザー操作を探す"""
+        max_fall_count = 0
+        best_action = None
+        best_action_human_readable = None
+
+        for r in range(BOARD_SIZE):
+            for c in range(BOARD_SIZE):
+                if self.board[r][c] is not None:
+                    # "add" 動作を試す
+                    fall_count, _ = self.simulate(("add", r, c), max_value=max_value)
+                    if fall_count > max_fall_count:
+                        max_fall_count = fall_count
+                        best_r = r + 1
+                        best_c = c + 1
+                        best_action = ("add", r, c)
+                        best_action_human_readable = ("add", "上から", best_r, "左から", best_c)
+
+                    # "remove" 動作を試す
+                    fall_count, _ = self.simulate(("remove", r, c), max_value=max_value)
+                    if fall_count > max_fall_count:
+                        max_fall_count = fall_count
+                        best_r = r + 1
+                        best_c = c + 1
+                        best_action = ("remove", r, c)
+                        best_action_human_readable = ("remove", "上から", best_r, "左から", best_c)
+
+        return best_action, best_action_human_readable, max_fall_count
+
 
 # Streamlit アプリの設定
 st.title("Merge Game Simulator")
@@ -119,5 +148,8 @@ if simulate_button:
     else:
         initial_board = [input_numbers[i:i + BOARD_SIZE] for i in range(0, len(input_numbers), BOARD_SIZE)]
         simulator = MergeGameSimulator(initial_board)
-        best_action, max_fall_count = simulator.simulate(("add", 0, 0), max_value=max_value)
-        st.write(f"Best action: {best_action}, Max fall count: {max_fall_count}")
+        best_action, best_action_human_readable, max_fall_count = simulator.find_best_action(max_value=max_value)
+
+        st.write(f"Best action: {best_action_human_readable}, Max fall count: {max_fall_count}")
+        st.write("\nSimulation:")
+        simulator.simulate(best_action, max_value=max_value)
