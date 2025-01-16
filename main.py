@@ -1,7 +1,5 @@
 import streamlit as st
 import copy
-import os
-from contextlib import redirect_stdout
 
 # 定数
 BOARD_SIZE = 5
@@ -75,12 +73,13 @@ class MergeGameSimulator:
             for r in range(BOARD_SIZE - 1, -1, -1):
                 board[r][c] = column.pop() if column else None
 
-    def simulate(self, action, max_value=20):
+    def simulate(self, action, max_value=20, suppress_output=False):
         """1回のユーザー操作をシミュレート"""
         board = copy.deepcopy(self.board)
 
-        st.write("Initial board:")
-        self.display_board(board)
+        if not suppress_output:
+            st.write("Initial board:")
+            self.display_board(board)
 
         # ユーザーの動作を適用
         if action[0] == "add":
@@ -101,8 +100,9 @@ class MergeGameSimulator:
             self.apply_gravity(board)
             fall_count += 1
 
-            st.write(f"After fall {fall_count}:")
-            self.display_board(board)
+            if not suppress_output:
+                st.write(f"After fall {fall_count}:")
+                self.display_board(board)
 
         return fall_count, board
 
@@ -115,8 +115,8 @@ class MergeGameSimulator:
         for r in range(BOARD_SIZE):
             for c in range(BOARD_SIZE):
                 if self.board[r][c] is not None:
-                    # "add" 動作を試す
-                    fall_count, _ = self.simulate(("add", r, c), max_value=max_value)
+                    # "add" 動作を試す（出力抑制）
+                    fall_count, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
                     if fall_count > max_fall_count:
                         max_fall_count = fall_count
                         best_r = r + 1
@@ -124,8 +124,8 @@ class MergeGameSimulator:
                         best_action = ("add", r, c)
                         best_action_human_readable = ("add", "上から", best_r, "左から", best_c)
 
-                    # "remove" 動作を試す
-                    fall_count, _ = self.simulate(("remove", r, c), max_value=max_value)
+                    # "remove" 動作を試す（出力抑制）
+                    fall_count, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
                     if fall_count > max_fall_count:
                         max_fall_count = fall_count
                         best_r = r + 1
@@ -157,11 +157,10 @@ if simulate_button:
             st.error(f"Each row must contain exactly {BOARD_SIZE} numbers.")
         else:
             simulator = MergeGameSimulator(initial_board)
-            with redirect_stdout(open(os.devnull, 'w')):
-                best_action, best_action_human_readable, max_fall_count = simulator.find_best_action(max_value=max_value)
+            best_action, best_action_human_readable, max_fall_count = simulator.find_best_action(max_value=max_value)
 
             st.write(f"Best action: {best_action_human_readable}, Max fall count: {max_fall_count}")
             st.write("\nSimulation of best action:")
-            simulator.simulate(best_action, max_value=max_value)
+            simulator.simulate(best_action, max_value=max_value, suppress_output=False)
     except ValueError:
         st.error("Invalid input! Please enter integers separated by commas.")
