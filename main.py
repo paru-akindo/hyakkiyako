@@ -76,7 +76,7 @@ class MergeGameSimulator:
         """1回のユーザー操作をシミュレート"""
         board = copy.deepcopy(self.board)
 
-        st.write("Input board:")
+        st.write("Initial board:")
         self.display_board(board)
 
         # ユーザーの動作を適用
@@ -89,8 +89,6 @@ class MergeGameSimulator:
 
         # 合成と落下処理を繰り返す
         fall_count = 0
-        st.write("Initial board:")
-        self.display_board(board)
 
         while True:
             clusters = self.find_clusters(board)
@@ -151,5 +149,5 @@ if simulate_button:
         best_action, best_action_human_readable, max_fall_count = simulator.find_best_action(max_value=max_value)
 
         st.write(f"Best action: {best_action_human_readable}, Max fall count: {max_fall_count}")
-        st.write("\nSimulation:")
+        st.write("\nSimulation of best action:")
         simulator.simulate(best_action, max_value=max_value)
