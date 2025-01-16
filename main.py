@@ -143,10 +143,10 @@ st.write("Enter the board row by row (comma-separated):")
 # 行ごとに入力
 rows = []
 for i in range(BOARD_SIZE):
-    row = st.text_input(f"Row {i + 1}:", "8,8,6,5,6")
+    row = st.text_input(f"Row {i + 1}:", "1,2,3,4,5")
     rows.append(row)
 
-max_value = st.number_input("Enter max value for merging:", min_value=1, value=20)
+max_value = st.number_input("Enter max value for merging:", min_value=1, value=10)
 simulate_button = st.button("Simulate")
 
 if simulate_button:
