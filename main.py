@@ -155,7 +155,8 @@ if simulate_button:
             st.error(f"Each row must contain exactly {BOARD_SIZE} numbers.")
         else:
             simulator = MergeGameSimulator(initial_board)
-            best_action, best_action_human_readable, max_fall_count = simulator.find_best_action(max_value=max_value)
+            with redirect_stdout(open(os.devnull, 'w')):
+                best_action, best_action_human_readable, max_fall_count = simulator.find_best_action(max_value=max_value)
 
             st.write(f"Best action: {best_action_human_readable}, Max fall count: {max_fall_count}")
             st.write("\nSimulation of best action:")
