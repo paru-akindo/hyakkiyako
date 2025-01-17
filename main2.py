@@ -173,14 +173,14 @@ if simulate_button:
         else:
             simulator = MergeGameSimulator(initial_board)
             best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers = simulator.find_best_action(max_value=max_value)
+            st.write(f"Best action by fall count: {best_action_by_fall}, Max fall count: {max_fall_count}, Max merged numbers: {max_total_merged_numbers}")
+            st.write(f"Best action by merged: {best_action_by_merged}, Max fall count: {max_fall_count}, Max merged numbers: {max_total_merged_numbers}")
 
             if best_action_by_fall:
-                st.write(f"Best action by fall count: {best_action_by_fall}, Max fall count: {max_fall_count}")
                 st.write("\nSimulation for best action by fall count:")
                 simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=False)
 
             if best_action_by_merged:
-                st.write(f"Best action by merged: {best_action_by_merged}, Max merged numbers: {max_total_merged_numbers}")
                 st.write("\nSimulation for best action by merged numbers:")
                 simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=False)
     except ValueError:
