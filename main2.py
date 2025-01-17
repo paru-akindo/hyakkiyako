@@ -126,12 +126,12 @@ class MergeGameSimulator:
                     fall_count, total_merged_numbers, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
 
                     # 落下回数が最大の操作
-                    if fall_count > max_fall_count:
+                    if fall_count >= max_fall_count:
                         max_fall_count = fall_count
                         best_action_by_fall = ("add", r, c)
 
                     # 合成した数字の個数が最大の操作
-                    if total_merged_numbers > max_total_merged_numbers:
+                    if total_merged_numbers >= max_total_merged_numbers:
                         max_total_merged_numbers = total_merged_numbers
                         best_action_by_merged = ("add", r, c)
 
@@ -139,12 +139,12 @@ class MergeGameSimulator:
                     fall_count, total_merged_numbers, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
 
                     # 落下回数が最大の操作
-                    if fall_count > max_fall_count:
+                    if fall_count >= max_fall_count:
                         max_fall_count = fall_count
                         best_action_by_fall = ("remove", r, c)
 
                     # 合成した数字の個数が最大の操作
-                    if total_merged_numbers > max_total_merged_numbers:
+                    if total_merged_numbers >= max_total_merged_numbers:
                         max_total_merged_numbers = total_merged_numbers
                         best_action_by_merged = ("remove", r, c)
 
