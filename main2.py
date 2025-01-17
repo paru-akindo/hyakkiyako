@@ -133,6 +133,7 @@ class MergeGameSimulator:
                         best_c = c + 1
                         best_action_by_fall = ("add", r, c)
                         best_action_by_fall_hr = ("add", "上から", best_r, "左から", best_c)
+                        fall_merge_n = total_merged_numbers
 
                     # 合成した数字の個数が最大の操作
                     if total_merged_numbers >= max_total_merged_numbers:
@@ -141,6 +142,7 @@ class MergeGameSimulator:
                         best_c = c + 1
                         best_action_by_merged = ("add", r, c)
                         best_action_by_merged_hr = ("add", "上から", best_r, "左から", best_c)
+                        merge_fall_n = fall_count
 
                     # "remove" 動作を試す（出力抑制）
                     fall_count, total_merged_numbers, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
@@ -152,6 +154,7 @@ class MergeGameSimulator:
                         best_c = c + 1
                         best_action_by_fall = ("remove", r, c)
                         best_action_by_fall_hr = ("remove", "上から", best_r, "左から", best_c)
+                        fall_merge_n = total_merged_numbers
 
                     # 合成した数字の個数が最大の操作
                     if total_merged_numbers >= max_total_merged_numbers:
@@ -160,8 +163,9 @@ class MergeGameSimulator:
                         best_c = c + 1
                         best_action_by_merged = ("remove", r, c)
                         best_action_by_merged_hr = ("remove", "上から", best_r, "左から", best_c)
+                        merge_fall_n = fall_count
 
-        return best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers, best_action_by_fall_hr, best_action_by_merged_hr
+        return best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers, best_action_by_fall_hr, best_action_by_merged_hr, fall_merge_n, merge_fall_n
 
 
 # Streamlit アプリの設定
@@ -185,9 +189,9 @@ if simulate_button:
             st.error(f"Each row must contain exactly {BOARD_SIZE} numbers.")
         else:
             simulator = MergeGameSimulator(initial_board)
-            best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers, best_action_by_fall_hr, best_action_by_merged_hr = simulator.find_best_action(max_value=max_value)
-            st.write(f"Best action by fall count: {best_action_by_fall_hr}, Max fall count: {max_fall_count}, Max merged numbers: {max_total_merged_numbers}")
-            st.write(f"Best action by merged: {best_action_by_merged_hr}, Max fall count: {max_fall_count}, Max merged numbers: {max_total_merged_numbers}")
+            best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers, best_action_by_fall_hr, best_action_by_merged_hr, fall_merge_n, merge_fall_n = simulator.find_best_action(max_value=max_value)
+            st.write(f"Best action by fall count: {best_action_by_fall_hr}, Max fall count: {max_fall_count}, merged numbers: {fall_merge_n}")
+            st.write(f"Best action by merged: {best_action_by_merged_hr}, fall count: {merge_fall_n}, Max merged numbers: {max_total_merged_numbers}")
 
             if best_action_by_fall:
                 st.write("\nSimulation for best action by fall count:")
