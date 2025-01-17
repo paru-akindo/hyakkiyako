@@ -131,7 +131,7 @@ class MergeGameSimulator:
                         best_r = r + 1
                         best_c = c + 1
                         best_action_by_fall = ("add", r, c)
-                        best_action_by_fall_hr = ("remove", "上から", best_r, "左から", best_c)
+                        best_action_by_fall_hr = ("add", "上から", best_r, "左から", best_c)
 
                     # 合成した数字の個数が最大の操作
                     if total_merged_numbers >= max_total_merged_numbers:
