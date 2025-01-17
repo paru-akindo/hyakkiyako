@@ -113,7 +113,7 @@ class MergeGameSimulator:
         best_action_human_readable = None
 
         for r in range(BOARD_SIZE):
-            for c in range(BOARD_SIZE):
+            for c in range(BOARD_SIZE, -1, -1):
                 if self.board[r][c] is not None:
                     # "add" 動作を試す（出力抑制）
                     fall_count, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
