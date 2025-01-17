@@ -122,31 +122,31 @@ class MergeGameSimulator:
         for r in range(BOARD_SIZE):
             for c in range(BOARD_SIZE):
                 if self.board[r][c] is not None:
-                    # "remove" 動作を試す（出力抑制）
-                    fall_count, total_merged_numbers, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
-
-                    # 落下回数が最大の操作
-                    if fall_count >= max_fall_count:
-                        max_fall_count = fall_count
-                        best_action_by_fall = ("remove", "上から", r + 1, "左から", c + 1)
-
-                    # 合成した数字の個数が最大の操作
-                    if total_merged_numbers >= max_total_merged_numbers:
-                        max_total_merged_numbers = total_merged_numbers
-                        best_action_by_merged = ("remove", "上から", r + 1, "左から", c + 1)
-                    
                     # "add" 動作を試す（出力抑制）
                     fall_count, total_merged_numbers, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
 
                     # 落下回数が最大の操作
-                    if fall_count >= max_fall_count:
+                    if fall_count > max_fall_count:
                         max_fall_count = fall_count
                         best_action_by_fall = ("add", "上から", r + 1, "左から", c + 1)
 
                     # 合成した数字の個数が最大の操作
-                    if total_merged_numbers >= max_total_merged_numbers:
+                    if total_merged_numbers > max_total_merged_numbers:
                         max_total_merged_numbers = total_merged_numbers
                         best_action_by_merged = ("add", "上から", r + 1, "左から", c + 1)
+
+                    # "remove" 動作を試す（出力抑制）
+                    fall_count, total_merged_numbers, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
+
+                    # 落下回数が最大の操作
+                    if fall_count > max_fall_count:
+                        max_fall_count = fall_count
+                        best_action_by_fall = ("remove", "上から", r + 1, "左から", c + 1)
+
+                    # 合成した数字の個数が最大の操作
+                    if total_merged_numbers > max_total_merged_numbers:
+                        max_total_merged_numbers = total_merged_numbers
+                        best_action_by_merged = ("remove", "上から", r + 1, "左から", c + 1)
 
         return best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers
 
