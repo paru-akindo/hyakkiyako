@@ -152,7 +152,7 @@ class MergeGameSimulator:
 
 
 # Streamlit アプリの設定
-st.title("Merge Game Simulator")
+st.title("Merge Game Simulator ver.2")
 st.write("Enter the board row by row (comma-separated):")
 
 # 行ごとに入力
