@@ -96,6 +96,7 @@ class MergeGameSimulator:
         # 合成と落下処理を繰り返す
         fall_count = 0
         total_merged_numbers = 0
+        self.apply_gravity(board)
 
         while True:
             clusters = self.find_clusters(board)
