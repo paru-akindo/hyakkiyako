@@ -175,11 +175,6 @@ if simulate_button:
             best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers = simulator.find_best_action(max_value=max_value)
 
             st.write(f"Best action by fall count: {best_action_by_fall}, Max fall count: {max_fall_count}")
-            st.write("\nSimulation for best action by fall count:")
-            simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=False)
-
             st.write(f"Best action by merged numbers: {best_action_by_merged}, Max merged numbers: {max_total_merged_numbers}")
-            st.write("\nSimulation for best action by merged numbers:")
-            simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=False)
     except ValueError:
         st.error("Invalid input! Please enter integers separated by commas.")
