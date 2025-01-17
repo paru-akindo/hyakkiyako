@@ -98,6 +98,7 @@ class MergeGameSimulator:
         total_merged_numbers = 0
 
         while True:
+            self.apply_gravity(board)
             clusters = self.find_clusters(board)
             if not clusters:
                 break
