@@ -115,6 +115,15 @@ class MergeGameSimulator:
         for r in range(BOARD_SIZE):
             for c in range(BOARD_SIZE):
                 if self.board[r][c] is not None:
+                    # "remove" 動作を試す（出力抑制）
+                    fall_count, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
+                    if fall_count >= max_fall_count:
+                        max_fall_count = fall_count
+                        best_r = r + 1
+                        best_c = c + 1
+                        best_action = ("remove", r, c)
+                        best_action_human_readable = ("remove", "上から", best_r, "左から", best_c)
+
                     # "add" 動作を試す（出力抑制）
                     fall_count, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
                     if fall_count >= max_fall_count:
@@ -124,14 +133,7 @@ class MergeGameSimulator:
                         best_action = ("add", r, c)
                         best_action_human_readable = ("add", "上から", best_r, "左から", best_c)
 
-                    # "remove" 動作を試す（出力抑制）
-                    fall_count, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
-                    if fall_count > max_fall_count:
-                        max_fall_count = fall_count
-                        best_r = r + 1
-                        best_c = c + 1
-                        best_action = ("remove", r, c)
-                        best_action_human_readable = ("remove", "上から", best_r, "左から", best_c)
+
 
         return best_action, best_action_human_readable, max_fall_count
 
