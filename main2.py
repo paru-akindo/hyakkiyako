@@ -8,40 +8,11 @@ class MergeGameSimulator:
     def __init__(self, board):
         self.board = board  # 初期盤面を設定
 
-    def display_board_html(self, board):
-        """盤面をHTMLの方眼形式で表示"""
-        html = """
-        <style>
-            .board-table {
-                border-collapse: collapse;
-                margin: 10px 0;
-            }
-            .board-table td {
-                width: 40px;
-                height: 40px;
-                text-align: center;
-                vertical-align: middle;
-                border: 1px solid black;
-                font-size: 18px;
-                font-family: Arial, sans-serif;
-                background-color: #f9f9f9;
-            }
-            .board-table td.empty {
-                background-color: #ddd;
-            }
-        </style>
-        <table class="board-table">
-        """
+    def display_board(self, board):
+        """盤面をHTMLで5×5形式で表示"""
         for row in board:
-            html += "<tr>"
-            for cell in row:
-                if cell is not None:
-                    html += f"<td>{cell}</td>"
-                else:
-                    html += '<td class="empty">.</td>'
-            html += "</tr>"
-        html += "</table>"
-        return html
+            st.write(" ".join(f"{cell:2}" if cell else " . " for cell in row))
+        st.write("---")
 
     def find_clusters(self, board):
         """隣接する同じ数字のクラスターを探す"""
@@ -217,13 +188,12 @@ if simulate_button:
             st.write(f"Best action by fall count: {best_action_by_fall_hr}, Max fall count: {max_fall_count}, Max merged numbers: {max_total_merged_numbers}")
             st.write(f"Best action by merged: {best_action_by_merged_hr}, Max fall count: {max_fall_count}, Max merged numbers: {max_total_merged_numbers}")
 
-            # 最適な盤面を方眼形式で表示
-            st.subheader("Best Board by Fall Count")
-            _, _, best_board_by_fall = simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=True)
-            st.markdown(simulator.display_board_html(best_board_by_fall), unsafe_allow_html=True)
+            if best_action_by_fall:
+                st.write("\nSimulation for best action by fall count:")
+                simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=False)
 
-            st.subheader("Best Board by Merged Numbers")
-            _, _, best_board_by_merged = simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=True)
-            st.markdown(simulator.display_board_html(best_board_by_merged), unsafe_allow_html=True)
+            if best_action_by_merged:
+                st.write("\nSimulation for best action by merged numbers:")
+                simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=False)
     except ValueError:
         st.error("Invalid input! Please enter integers separated by commas.")
