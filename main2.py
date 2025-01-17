@@ -111,46 +111,44 @@ class MergeGameSimulator:
 
         return fall_count, total_merged_numbers, board
 
-def find_best_action(self, max_value=20):
-    """最適なユーザー操作を探す (左下から右上に向かう順序)"""
-    max_fall_count = 0
-    max_total_merged_numbers = 0
+    def find_best_action(self, max_value=20):
+        """最適なユーザー操作を探す"""
+        max_fall_count = 0
+        max_total_merged_numbers = 0
 
-    best_action_by_fall = None
-    best_action_by_merged = None
+        best_action_by_fall = None
+        best_action_by_merged = None
 
-    # 左下から右上に向かう順序でセルを取得
-    for r in range(BOARD_SIZE - 1, -1, -1):  # 行: 下から上
-        for c in range(BOARD_SIZE):  # 列: 左から右
-            if self.board[r][c] is not None:
-                # "add" 動作を試す（出力抑制）
-                fall_count, total_merged_numbers, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
+        for r in range(BOARD_SIZE):
+            for c in range(BOARD_SIZE):
+                if self.board[r][c] is not None:
+                    # "add" 動作を試す（出力抑制）
+                    fall_count, total_merged_numbers, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
 
-                # 落下回数が最大の操作
-                if fall_count > max_fall_count:
-                    max_fall_count = fall_count
-                    best_action_by_fall = ("add", "上から", r + 1, "左から", c + 1)
+                    # 落下回数が最大の操作
+                    if fall_count >= max_fall_count:
+                        max_fall_count = fall_count
+                        best_action_by_fall = ("add", "上から", r + 1, "左から", c + 1)
 
-                # 合成した数字の個数が最大の操作
-                if total_merged_numbers > max_total_merged_numbers:
-                    max_total_merged_numbers = total_merged_numbers
-                    best_action_by_merged = ("add", "上から", r + 1, "左から", c + 1)
+                    # 合成した数字の個数が最大の操作
+                    if total_merged_numbers >= max_total_merged_numbers:
+                        max_total_merged_numbers = total_merged_numbers
+                        best_action_by_merged = ("add", "上から", r + 1, "左から", c + 1)
 
-                # "remove" 動作を試す（出力抑制）
-                fall_count, total_merged_numbers, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
+                    # "remove" 動作を試す（出力抑制）
+                    fall_count, total_merged_numbers, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
 
-                # 落下回数が最大の操作
-                if fall_count > max_fall_count:
-                    max_fall_count = fall_count
-                    best_action_by_fall = ("remove", "上から", r + 1, "左から", c + 1)
+                    # 落下回数が最大の操作
+                    if fall_count >= max_fall_count:
+                        max_fall_count = fall_count
+                        best_action_by_fall = ("remove", "上から", r + 1, "左から", c + 1)
 
-                # 合成した数字の個数が最大の操作
-                if total_merged_numbers > max_total_merged_numbers:
-                    max_total_merged_numbers = total_merged_numbers
-                    best_action_by_merged = ("remove", "上から", r + 1, "左から", c + 1)
+                    # 合成した数字の個数が最大の操作
+                    if total_merged_numbers >= max_total_merged_numbers:
+                        max_total_merged_numbers = total_merged_numbers
+                        best_action_by_merged = ("remove", "上から", r + 1, "左から", c + 1)
 
-    return best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers
-
+        return best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers
 
 
 # Streamlit アプリの設定
@@ -177,6 +175,11 @@ if simulate_button:
             best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers = simulator.find_best_action(max_value=max_value)
 
             st.write(f"Best action by fall count: {best_action_by_fall}, Max fall count: {max_fall_count}")
+            st.write("\nSimulation for best action by fall count:")
+            simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=False)
+
             st.write(f"Best action by merged numbers: {best_action_by_merged}, Max merged numbers: {max_total_merged_numbers}")
+            st.write("\nSimulation for best action by merged numbers:")
+            simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=False)
     except ValueError:
         st.error("Invalid input! Please enter integers separated by commas.")
