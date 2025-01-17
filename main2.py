@@ -111,19 +111,20 @@ class MergeGameSimulator:
 
         return fall_count, total_merged_numbers, board
 
-    def find_best_action(self, max_value=20):
-        """最適なユーザー操作を探す (左下から右上に向かう順序)"""
-        max_fall_count = 0
-        max_total_merged_numbers = 0
+def find_best_action(self, max_value=20):
+    """最適なユーザー操作を探す (左下から右上に向かう順序)"""
+    max_fall_count = 0
+    max_total_merged_numbers = 0
 
-        best_action_by_fall = None
-        best_action_by_merged = None
+    best_action_by_fall = None
+    best_action_by_merged = None
 
-        # 左下から右上に向かう順序でセルを取得
-        for r in range(BOARD_SIZE - 1, -1, -1):  # 行: 下から上
-            for c in range(BOARD_SIZE):  # 列: 左から右
-                if self.board[r][c] is not None:
-                    # "add" 動作を試す（出力抑制）
+    # 左下から右上に向かう順序でセルを取得
+    for r in range(BOARD_SIZE - 1, -1, -1):  # 行: 下から上
+        for c in range(BOARD_SIZE):  # 列: 左から右
+            if self.board[r][c] is not None:  # セルが None でない場合のみ試行
+                # "add" 動作を試す（出力抑制）
+                try:
                     fall_count, total_merged_numbers, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
 
                     # 落下回数が最大の操作
@@ -135,8 +136,11 @@ class MergeGameSimulator:
                     if total_merged_numbers > max_total_merged_numbers:
                         max_total_merged_numbers = total_merged_numbers
                         best_action_by_merged = ("add", "上から", r + 1, "左から", c + 1)
+                except IndexError:
+                    st.error(f"Invalid access during 'add' operation at ({r}, {c}).")
 
-                    # "remove" 動作を試す（出力抑制）
+                # "remove" 動作を試す（出力抑制）
+                try:
                     fall_count, total_merged_numbers, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
 
                     # 落下回数が最大の操作
@@ -148,8 +152,11 @@ class MergeGameSimulator:
                     if total_merged_numbers > max_total_merged_numbers:
                         max_total_merged_numbers = total_merged_numbers
                         best_action_by_merged = ("remove", "上から", r + 1, "左から", c + 1)
+                except IndexError:
+                    st.error(f"Invalid access during 'remove' operation at ({r}, {c}).")
 
-        return best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers
+    return best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers
+
 
 
 # Streamlit アプリの設定
