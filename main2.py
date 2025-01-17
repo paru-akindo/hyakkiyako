@@ -180,7 +180,7 @@ if simulate_button:
                 simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=False)
 
             if best_action_by_merged:
-                st.write(f"Best action by merged numbers: {best_action_by_merged}, Max merged numbers: {max_total_merged_numbers}")
+                st.write(f"Best action by merged: {best_action_by_merged}, Max merged numbers: {max_total_merged_numbers}")
                 st.write("\nSimulation for best action by merged numbers:")
                 simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=False)
     except ValueError:
