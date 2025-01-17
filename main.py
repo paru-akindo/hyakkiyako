@@ -117,7 +117,7 @@ class MergeGameSimulator:
                 if self.board[r][c] is not None:
                     # "add" 動作を試す（出力抑制）
                     fall_count, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
-                    if fall_count > max_fall_count:
+                    if fall_count >= max_fall_count:
                         max_fall_count = fall_count
                         best_r = r + 1
                         best_c = c + 1
