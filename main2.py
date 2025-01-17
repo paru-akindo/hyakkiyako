@@ -98,7 +98,6 @@ class MergeGameSimulator:
         total_merged_numbers = 0
 
         while True:
-            self.apply_gravity(board)
             clusters = self.find_clusters(board)
             if not clusters:
                 break
@@ -127,33 +126,33 @@ class MergeGameSimulator:
                     fall_count, total_merged_numbers, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
 
                     # 落下回数が最大の操作
-                    if fall_count >= max_fall_count:
+                    if fall_count > max_fall_count:
                         max_fall_count = fall_count
-                        best_action_by_fall = ("add", "上から", r + 1, "左から", c + 1)
+                        best_action_by_fall = ("add", r, c)
 
                     # 合成した数字の個数が最大の操作
-                    if total_merged_numbers >= max_total_merged_numbers:
+                    if total_merged_numbers > max_total_merged_numbers:
                         max_total_merged_numbers = total_merged_numbers
-                        best_action_by_merged = ("add", "上から", r + 1, "左から", c + 1)
+                        best_action_by_merged = ("add", r, c)
 
                     # "remove" 動作を試す（出力抑制）
                     fall_count, total_merged_numbers, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
 
                     # 落下回数が最大の操作
-                    if fall_count >= max_fall_count:
+                    if fall_count > max_fall_count:
                         max_fall_count = fall_count
-                        best_action_by_fall = ("remove", "上から", r + 1, "左から", c + 1)
+                        best_action_by_fall = ("remove", r, c)
 
                     # 合成した数字の個数が最大の操作
-                    if total_merged_numbers >= max_total_merged_numbers:
+                    if total_merged_numbers > max_total_merged_numbers:
                         max_total_merged_numbers = total_merged_numbers
-                        best_action_by_merged = ("remove", "上から", r + 1, "左から", c + 1)
+                        best_action_by_merged = ("remove", r, c)
 
         return best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers
 
 
 # Streamlit アプリの設定
-st.title("Merge Game Simulator ver.2")
+st.title("Merge Game Simulator")
 st.write("Enter the board row by row (comma-separated):")
 
 # 行ごとに入力
@@ -175,7 +174,14 @@ if simulate_button:
             simulator = MergeGameSimulator(initial_board)
             best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers = simulator.find_best_action(max_value=max_value)
 
-            st.write(f"Best action by fall count: {best_action_by_fall}, Max fall count: {max_fall_count}, Max merged numbers: {max_total_merged_numbers}")
-            st.write(f"Best action by merged N: {best_action_by_merged}, Max fall count: {max_fall_count}, Max merged numbers: {max_total_merged_numbers}")
+            if best_action_by_fall:
+                st.write(f"Best action by fall count: {best_action_by_fall}, Max fall count: {max_fall_count}")
+                st.write("\nSimulation for best action by fall count:")
+                simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=False)
+
+            if best_action_by_merged:
+                st.write(f"Best action by merged numbers: {best_action_by_merged}, Max merged numbers: {max_total_merged_numbers}")
+                st.write("\nSimulation for best action by merged numbers:")
+                simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=False)
     except ValueError:
         st.error("Invalid input! Please enter integers separated by commas.")
