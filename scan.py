@@ -1,45 +1,53 @@
 import streamlit as st
-import easyocr
-import numpy as np
 import cv2
+import numpy as np
+import easyocr
 from PIL import Image
 
-# EasyOCR Readerの初期化
+# Streamlitアプリの設定
+st.title("数字抽出アプリ")
+st.write("画像をアップロードすると、赤枠内の数字を抽出して配列として表示します。")
+
+# EasyOCRのインスタンスを作成
 reader = easyocr.Reader(['en'], gpu=False)
 
-# Streamlitアプリのタイトル
-st.title("カメラからリアルタイムで数字を認識")
+# 画像アップロード
+uploaded_file = st.file_uploader("画像をアップロードしてください", type=["jpg", "jpeg", "png"])
 
-# カメラ入力
-img_file_buffer = st.camera_input("カメラで撮影してください")
+if uploaded_file is not None:
+    # 画像を読み込む
+    image = Image.open(uploaded_file)
+    image = np.array(image)
 
-if img_file_buffer is not None:
-    # 撮影された画像をPIL形式で読み込み
-    image = Image.open(img_file_buffer)
+    # 画像を表示
+    st.image(image, caption="アップロードされた画像", use_column_width=True)
 
-    # PIL画像をNumPy配列に変換（EasyOCRがNumPy配列を必要とするため）
-    image_np = np.array(image)
+    # 赤枠の位置とサイズを定義（固定座標）
+    start_x, start_y = 100, 600  # 赤枠の左上の座標（手動で設定）
+    cell_width, cell_height = 120, 120  # 各セルの幅と高さ
+    grid_size = 5  # 5×5のグリッド
 
-    # EasyOCRでテキスト認識を実行
-    st.write("認識中...")
-    results = reader.readtext(image_np)
+    # 数字を格納するリスト
+    numbers = []
 
-    # 認識結果を表示
-    st.write("認識結果:")
-    for (bbox, text, prob) in results:
-        st.write(f"テキスト: {text}, 信頼度: {prob:.2f}")
+    # 赤枠の中の各セルを切り出してOCRで数字を読み取る
+    for row in range(grid_size):
+        row_numbers = []
+        for col in range(grid_size):
+            # 各セルの座標を計算
+            cell_x = start_x + col * cell_width
+            cell_y = start_y + row * cell_height
+            cell = image[cell_y:cell_y + cell_height, cell_x:cell_x + cell_width]
 
-    # 認識結果を画像に描画
-    for (bbox, text, prob) in results:
-        # バウンディングボックスの座標を取得
-        (top_left, top_right, bottom_right, bottom_left) = bbox
-        top_left = tuple(map(int, top_left))
-        bottom_right = tuple(map(int, bottom_right))
+            # OCRを適用して数字を抽出
+            results = reader.readtext(cell, detail=0)  # detail=0でテキストのみ取得
+            if results:
+                # 最初の認識結果を数字として格納
+                row_numbers.append(results[0])
+            else:
+                row_numbers.append(None)  # 認識できない場合はNoneを追加
+        numbers.append(row_numbers)
 
-        # バウンディングボックスとテキストを描画
-        cv2.rectangle(image_np, top_left, bottom_right, (0, 255, 0), 2)
-        cv2.putText(image_np, text, (top_left[0], top_left[1] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
-    # 描画結果を表示
-    st.image(image_np, caption="認識結果付きの画像", use_column_width=True)
+    # 抽出した数字を表示
+    st.write("抽出された数字:")
+    st.write(numbers)
