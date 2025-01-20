@@ -1,62 +1,41 @@
 import streamlit as st
-import cv2
+import easyocr
 import numpy as np
-import pytesseract
+import cv2
 from PIL import Image
 
-# 定数
-BOARD_SIZE = 5
+# Streamlitアプリのタイトル
+st.title("OCRで画像から数字を取得")
 
-def preprocess_image(image):
-    """画像を前処理してOCR精度を向上"""
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # グレースケール変換
-    _, binary = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)  # 二値化
-    return binary
+# EasyOCRのリーダーを初期化
+reader = easyocr.Reader(['en'], gpu=False)  # GPUが不要な場合はgpu=False
 
-def extract_numbers(image):
-    """画像から数字を抽出して配列に変換"""
-    # OCRで文字認識
-    custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789'
-    text = pytesseract.image_to_string(image, config=custom_config)
-    
-    # テキストを行ごとに分割し、配列に変換
-    lines = text.strip().split("\n")
-    board = []
-    for line in lines:
-        # 数字をスペースやカンマで分割してリストに変換
-        numbers = [int(num) for num in line.split() if num.isdigit()]
-        if numbers:
-            board.append(numbers)
-    
-    # 配列のサイズを5×5に調整
-    if len(board) == BOARD_SIZE and all(len(row) == BOARD_SIZE for row in board):
-        return board
-    else:
-        return None
+# ファイルアップロード
+uploaded_file = st.file_uploader("画像をアップロードしてください", type=["jpg", "jpeg", "png"])
 
-st.title("OCR Number Recognition for Merge Game")
-
-# 画像アップロード
-uploaded_file = st.file_uploader("Upload an image containing a 5x5 grid of numbers", type=["jpg", "png", "jpeg"])
-
-if uploaded_file:
-    # 画像の読み込み
+if uploaded_file is not None:
+    # アップロードされた画像を表示
     image = Image.open(uploaded_file)
+    st.image(image, caption="アップロードされた画像", use_column_width=True)
+
+    # 画像をNumPy配列に変換
     image_np = np.array(image)
-    
-    # 画像の前処理
-    preprocessed_image = preprocess_image(image_np)
-    
-    # OCRで数字を抽出
-    board = extract_numbers(preprocessed_image)
-    
-    # 結果の表示
-    st.subheader("Uploaded Image")
-    st.image(image, caption="Uploaded Image", use_column_width=True)
-    
-    if board:
-        st.subheader("Recognized Board (5x5)")
-        for row in board:
-            st.write(" ".join(map(str, row)))
+
+    # OpenCVで画像をグレースケールに変換
+    gray_image = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+
+    # OCRを実行して結果を取得
+    st.write("OCR処理中...")
+    results = reader.readtext(gray_image)
+
+    # 結果をフィルタリングして数字のみ抽出
+    detected_numbers = []
+    for (bbox, text, prob) in results:
+        if text.isdigit():  # 数字のみを抽出
+            detected_numbers.append(text)
+
+    # 結果を表示
+    if detected_numbers:
+        st.write("検出された数字:", detected_numbers)
     else:
-        st.error("Could not recognize a valid 5x5 board. Please try again with a clearer image.")
+        st.write("数字が検出されませんでした。")
