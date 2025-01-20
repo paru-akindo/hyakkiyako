@@ -23,8 +23,8 @@ if uploaded_file is not None:
     st.image(image, caption="アップロードされた画像", use_column_width=True)
 
     # 赤枠の位置とサイズを定義（固定座標）
-    start_x, start_y = 100, 600  # 赤枠の左上の座標（手動で設定）
-    cell_width, cell_height = 120, 120  # 各セルの幅と高さ
+    start_x, start_y = 50, 890  # 赤枠の左上の座標（手動で設定）
+    cell_width, cell_height = 206, 206  # 各セルの幅と高さ
     grid_size = 5  # 5×5のグリッド
 
     # 数字を格納するリスト
