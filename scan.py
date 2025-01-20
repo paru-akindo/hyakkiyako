@@ -4,38 +4,42 @@ import numpy as np
 import cv2
 from PIL import Image
 
+# EasyOCR Readerの初期化
+reader = easyocr.Reader(['en'], gpu=False)
+
 # Streamlitアプリのタイトル
-st.title("OCRで画像から数字を取得")
+st.title("カメラからリアルタイムで数字を認識")
 
-# EasyOCRのリーダーを初期化
-reader = easyocr.Reader(['en'], gpu=False)  # GPUが不要な場合はgpu=False
+# カメラ入力
+img_file_buffer = st.camera_input("カメラで撮影してください")
 
-# ファイルアップロード
-uploaded_file = st.file_uploader("画像をアップロードしてください", type=["jpg", "jpeg", "png"])
+if img_file_buffer is not None:
+    # 撮影された画像をPIL形式で読み込み
+    image = Image.open(img_file_buffer)
 
-if uploaded_file is not None:
-    # アップロードされた画像を表示
-    image = Image.open(uploaded_file)
-    st.image(image, caption="アップロードされた画像", use_column_width=True)
-
-    # 画像をNumPy配列に変換
+    # PIL画像をNumPy配列に変換（EasyOCRがNumPy配列を必要とするため）
     image_np = np.array(image)
 
-    # OpenCVで画像をグレースケールに変換
-    gray_image = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+    # EasyOCRでテキスト認識を実行
+    st.write("認識中...")
+    results = reader.readtext(image_np)
 
-    # OCRを実行して結果を取得
-    st.write("OCR処理中...")
-    results = reader.readtext(gray_image)
-
-    # 結果をフィルタリングして数字のみ抽出
-    detected_numbers = []
+    # 認識結果を表示
+    st.write("認識結果:")
     for (bbox, text, prob) in results:
-        if text.isdigit():  # 数字のみを抽出
-            detected_numbers.append(text)
+        st.write(f"テキスト: {text}, 信頼度: {prob:.2f}")
 
-    # 結果を表示
-    if detected_numbers:
-        st.write("検出された数字:", detected_numbers)
-    else:
-        st.write("数字が検出されませんでした。")
+    # 認識結果を画像に描画
+    for (bbox, text, prob) in results:
+        # バウンディングボックスの座標を取得
+        (top_left, top_right, bottom_right, bottom_left) = bbox
+        top_left = tuple(map(int, top_left))
+        bottom_right = tuple(map(int, bottom_right))
+
+        # バウンディングボックスとテキストを描画
+        cv2.rectangle(image_np, top_left, bottom_right, (0, 255, 0), 2)
+        cv2.putText(image_np, text, (top_left[0], top_left[1] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+    # 描画結果を表示
+    st.image(image_np, caption="認識結果付きの画像", use_column_width=True)
