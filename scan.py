@@ -1,32 +1,62 @@
 import streamlit as st
-import copy
 
-# **盤面サイズ**
+# 盤面サイズ
 BOARD_SIZE = 5
 
 # **スマホ対応のカスタムCSS**
 st.markdown("""
 <style>
-/* 各セルの最小幅を確保（スマホで崩れず、PCでは狭くなりすぎない） */
+/* 各セルの幅を適切に確保 */
 div[data-testid="stHorizontalBlock"] > div {
     min-width: 80px;
     flex: 1 1 auto;
     text-align: center;
 }
 
-/* スマホでは表示サイズを調整 */
+/* スマホ表示時に調整 */
 @media (max-width: 600px) {
     div[data-testid="stHorizontalBlock"] > div {
         min-width: 60px;
     }
 }
 
-/* ラベルを削除（スマホで省スペース化） */
-label[for^="R"] {
-    display: none;
+/* セルのデザイン（背景や枠線を調整） */
+.cell-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.cell {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #ccc;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 60px;
+    font-size: 24px;
+    background-color: #fafafa;
 }
 </style>
 """, unsafe_allow_html=True)
+
+st.title("スマホ対応版 Merge Game Simulator")
+
+# 各セルの数値入力をグリッド状に表示
+initial_board = []
+for r in range(BOARD_SIZE):
+    cols = st.columns(BOARD_SIZE)
+    row = []
+    for c in range(BOARD_SIZE):
+        val = cols[c].number_input(f"R{r+1}C{c+1}", min_value=0, max_value=100, value=0, key=f"{r}_{c}")
+        row.append(val)
+    initial_board.append(row)
+
+# 入力完了後、盤面を確認できるように表示
+st.markdown("### 入力した盤面")
+st.table(initial_board)
 
 ######################################
 # シミュレーションロジック
