@@ -1,27 +1,39 @@
 import streamlit as st
 import copy
 
-# 固定盤面サイズ
+# **盤面サイズ**
 BOARD_SIZE = 5
 
-# カスタムCSSを追加して、st.columns で生成される横ブロックの幅を固定
-st.markdown(
-    """
-    <style>
-    /* st.columns で生成される各ブロックの幅を固定し、スマホでも横並びに */
-    div[data-testid="stHorizontalBlock"] > div {
-        flex: 0 0 60px;
-        max-width: 60px;
-    }
-    
-    /* 入力ラベルは非表示に（スマホではスペース節約のため） */
-    label[for^="R"] {
-        display: none;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# **スマホ対応のカスタムCSS**
+st.markdown("""
+<style>
+/* 各セルを横並びに固定（スマホ表示時も崩れない） */
+div[data-testid="stHorizontalBlock"] > div {
+    flex: 0 0 60px;
+    max-width: 60px;
+}
+
+/* セルのデザイン（サイズ固定） */
+.cell-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.cell {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #ccc;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 60px;
+    font-size: 24px;
+    background-color: #fafafa;
+}
+</style>
+""", unsafe_allow_html=True)
 
 ######################################
 # シミュレーションロジック
@@ -31,13 +43,16 @@ class MergeGameSimulator:
         self.board = board  # 2次元リスト。空セルは None
 
     def display_board(self, board):
+        """盤面のテーブル表示"""
         st.table(board)
 
     def find_clusters(self, board):
+        """隣接する同じ数字のクラスターを探す"""
         visited = [[False] * BOARD_SIZE for _ in range(BOARD_SIZE)]
         clusters = []
 
         def dfs(r, c, value):
+            """深さ優先探索でクラスターを探す"""
             if r < 0 or r >= BOARD_SIZE or c < 0 or c >= BOARD_SIZE:
                 return []
             if visited[r][c] or board[r][c] != value:
@@ -57,6 +72,7 @@ class MergeGameSimulator:
         return clusters
 
     def merge_clusters(self, board, clusters, fall, user_action=None, max_value=20):
+        """クラスターを合成し、合成セル数を返す"""
         total_merged_numbers = 0
         for cluster in clusters:
             values = [board[r][c] for r, c in cluster]
@@ -77,12 +93,14 @@ class MergeGameSimulator:
         return total_merged_numbers
 
     def apply_gravity(self, board):
+        """数字を下に落とす"""
         for c in range(BOARD_SIZE):
             column = [board[r][c] for r in range(BOARD_SIZE) if board[r][c] is not None]
             for r in range(BOARD_SIZE - 1, -1, -1):
                 board[r][c] = column.pop() if column else None
 
     def simulate(self, action, max_value=20, suppress_output=False):
+        """指定の操作を適用してシミュレーションを実行"""
         board = copy.deepcopy(self.board)
         if not suppress_output:
             st.write("Initial Board:")
@@ -108,57 +126,18 @@ class MergeGameSimulator:
                 self.display_board(board)
         return fall_count, total_merged, board
 
-    def find_best_action(self, max_value=20):
-        max_fall = 0
-        max_merged = 0
-        best_action_fall = None
-        best_action_merged = None
-        best_action_fall_hr = None
-        best_action_merged_hr = None
-        fall_merge = 0
-        merge_fall = 0
-        for r in range(BOARD_SIZE):
-            for c in range(BOARD_SIZE):
-                if self.board[r][c] is not None:
-                    # "add" 操作を試す
-                    fall, cnt, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
-                    if fall >= max_fall:
-                        max_fall = fall
-                        best_action_fall = ("add", r, c)
-                        best_action_fall_hr = ("add", "row", r+1, "col", c+1)
-                        fall_merge = cnt
-                    if cnt >= max_merged:
-                        max_merged = cnt
-                        best_action_merged = ("add", r, c)
-                        best_action_merged_hr = ("add", "row", r+1, "col", c+1)
-                        merge_fall = fall
-                    # "remove" 操作を試す
-                    fall, cnt, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
-                    if fall >= max_fall:
-                        max_fall = fall
-                        best_action_fall = ("remove", r, c)
-                        best_action_fall_hr = ("remove", "row", r+1, "col", c+1)
-                        fall_merge = cnt
-                    if cnt >= max_merged:
-                        max_merged = cnt
-                        best_action_merged = ("remove", r, c)
-                        best_action_merged_hr = ("remove", "row", r+1, "col", c+1)
-                        merge_fall = fall
-        return (best_action_fall, max_fall, best_action_merged, max_merged,
-                best_action_fall_hr, best_action_merged_hr, fall_merge, merge_fall)
-
 ######################################
-# 盤面入力 UI (各セルごとの数値入力)
+# 盤面入力 UI
 ######################################
-st.title("Merge Game Simulator")
-st.write("下のグリッドに盤面の各セルの値を入力してください（空の場合は 0 と入力してください）。")
+st.title("Merge Game Simulator - スマホ対応版")
+st.write("各セルに数値を入力してください。（空の場合は 0）")
 
+# 入力盤面
 initial_board = []
 for r in range(BOARD_SIZE):
     cols = st.columns(BOARD_SIZE)
     row = []
     for c in range(BOARD_SIZE):
-        # 例として初期値はすべて 0 （またはお好みの値）
         val = cols[c].number_input(f"R{r+1}C{c+1}", min_value=0, max_value=100, value=0, key=f"{r}_{c}")
         row.append(val)
     initial_board.append(row)
@@ -169,7 +148,6 @@ max_value = st.number_input("最大合成値 (max_value):", min_value=1, value=2
 # シミュレーション実行
 ######################################
 if st.button("Simulate"):
-    # 入力盤面の変換: 0 は空セルとして扱う（None に変換）
     board = copy.deepcopy(initial_board)
     for r in range(BOARD_SIZE):
         for c in range(BOARD_SIZE):
