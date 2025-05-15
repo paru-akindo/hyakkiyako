@@ -1,17 +1,34 @@
 import streamlit as st
-import streamlit.components.v1 as components
-import json
 import copy
 
-# 固定盤面サイズ（5×5）
+# 固定盤面サイズ
 BOARD_SIZE = 5
 
-###################################
+# カスタムCSSを追加して、st.columns で生成される横ブロックの幅を固定
+st.markdown(
+    """
+    <style>
+    /* st.columns で生成される各ブロックの幅を固定し、スマホでも横並びに */
+    div[data-testid="stHorizontalBlock"] > div {
+        flex: 0 0 60px;
+        max-width: 60px;
+    }
+    
+    /* 入力ラベルは非表示に（スマホではスペース節約のため） */
+    label[for^="R"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+######################################
 # シミュレーションロジック
-###################################
+######################################
 class MergeGameSimulator:
     def __init__(self, board):
-        self.board = board  # board: 2D list of integers; empty cell: None
+        self.board = board  # 2次元リスト。空セルは None
 
     def display_board(self, board):
         st.table(board)
@@ -27,16 +44,16 @@ class MergeGameSimulator:
                 return []
             visited[r][c] = True
             cluster = [(r, c)]
-            for dr, dc in [(-1,0), (1,0), (0,-1), (0,1)]:
-                cluster.extend(dfs(r+dr, c+dc, value))
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                cluster.extend(dfs(r + dr, c + dc, value))
             return cluster
 
         for r in range(BOARD_SIZE):
             for c in range(BOARD_SIZE):
                 if board[r][c] is not None and not visited[r][c]:
-                    clust = dfs(r, c, board[r][c])
-                    if len(clust) >= 3:
-                        clusters.append(clust)
+                    cluster = dfs(r, c, board[r][c])
+                    if len(cluster) >= 3:
+                        clusters.append(cluster)
         return clusters
 
     def merge_clusters(self, board, clusters, fall, user_action=None, max_value=20):
@@ -62,7 +79,7 @@ class MergeGameSimulator:
     def apply_gravity(self, board):
         for c in range(BOARD_SIZE):
             column = [board[r][c] for r in range(BOARD_SIZE) if board[r][c] is not None]
-            for r in range(BOARD_SIZE-1, -1, -1):
+            for r in range(BOARD_SIZE - 1, -1, -1):
                 board[r][c] = column.pop() if column else None
 
     def simulate(self, action, max_value=20, suppress_output=False):
@@ -103,7 +120,7 @@ class MergeGameSimulator:
         for r in range(BOARD_SIZE):
             for c in range(BOARD_SIZE):
                 if self.board[r][c] is not None:
-                    # Try "add" action
+                    # "add" 操作を試す
                     fall, cnt, _ = self.simulate(("add", r, c), max_value=max_value, suppress_output=True)
                     if fall >= max_fall:
                         max_fall = fall
@@ -115,7 +132,7 @@ class MergeGameSimulator:
                         best_action_merged = ("add", r, c)
                         best_action_merged_hr = ("add", "row", r+1, "col", c+1)
                         merge_fall = fall
-                    # Try "remove" action
+                    # "remove" 操作を試す
                     fall, cnt, _ = self.simulate(("remove", r, c), max_value=max_value, suppress_output=True)
                     if fall >= max_fall:
                         max_fall = fall
@@ -130,179 +147,41 @@ class MergeGameSimulator:
         return (best_action_fall, max_fall, best_action_merged, max_merged,
                 best_action_fall_hr, best_action_merged_hr, fall_merge, merge_fall)
 
-###################################
-# カスタム Drag & Drop UI (React/JSX)
-###################################
-html_code = """
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Drag and Drop Board</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-      body { font-family: sans-serif; }
-      .container { display: flex; flex-direction: column; align-items: center; }
-      .piece-bank {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        margin-bottom: 20px;
-      }
-      .piece {
-        width: 40px;
-        height: 40px;
-        background-color: #87cefa;
-        border: 1px solid #000;
-        text-align: center;
-        line-height: 40px;
-        cursor: grab;
-        font-size: 18px;
-        user-select: none;
-      }
-      .board {
-        display: grid;
-        grid-template-columns: repeat(5, 60px);
-        grid-gap: 5px;
-        margin-bottom: 20px;
-      }
-      .cell {
-        width: 60px;
-        height: 60px;
-        border: 1px solid #ccc;
-        text-align: center;
-        vertical-align: middle;
-        line-height: 60px;
-        font-size: 24px;
-        background-color: #fafafa;
-      }
-    </style>
-    <!-- Load React, ReactDOM, Babel, and react-beautiful-dnd -->
-    <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/react-beautiful-dnd@13.1.0/dist/react-beautiful-dnd.min.js"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <button onclick="sendData()">Send Board Configuration</button>
-    <pre id="boardState" style="border:1px solid #ccc; padding:10px; width:320px; height:150px; overflow:auto;"></pre>
-    <script type="text/babel">
-      const { DragDropContext, Droppable, Draggable } = window.ReactBeautifulDnd;
-      class DragAndDropBoard extends React.Component {
-        constructor(props) {
-          super(props);
-          this.state = {
-            pieces: Array.from({ length: 20 }, (_, i) => String(i + 1)),
-            board: Array(25).fill("")
-          };
-          this.onDragEnd = this.onDragEnd.bind(this);
-        }
-        onDragEnd(result) {
-          if (!result.destination) return;
-          const { source, destination } = result;
-          // Check if dragging from pieceBank to a board cell (each cell droppableId = "cell-<index>")
-          if (source.droppableId === "pieceBank" && destination.droppableId.startsWith("cell-")) {
-            const piece = this.state.pieces[source.index];
-            // Extract the board cell index from droppableId (e.g., "cell-7")
-            const cellIndex = parseInt(destination.droppableId.split("-")[1]);
-            const newBoard = [...this.state.board];
-            newBoard[cellIndex] = piece;
-            this.setState({ board: newBoard });
-          }
-        }
-        render() {
-          return (
-            <DragDropContext onDragEnd={this.onDragEnd}>
-              <div className="container">
-                <h3>Piece Bank (drag from here)</h3>
-                <Droppable droppableId="pieceBank" direction="horizontal" isDropDisabled={true}>
-                  {(provided) => (
-                    <div className="piece-bank" ref={provided.innerRef} {...provided.droppableProps}>
-                      {this.state.pieces.map((piece, index) => (
-                        <Draggable key={"piece-" + piece} draggableId={"piece-" + piece} index={index}>
-                          {(provided) => (
-                            <div className="piece"
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}>
-                              {piece}
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-                <h3>Board (5x5)</h3>
-                <div className="board">
-                  {this.state.board.map((cell, index) => (
-                    <Droppable droppableId={"cell-" + index} key={index}>
-                      {(provided) => (
-                        <div className="cell" ref={provided.innerRef} {...provided.droppableProps}>
-                          {cell}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  ))}
-                </div>
-              </div>
-            </DragDropContext>
-          );
-        }
-      }
-      function sendData() {
-        const cells = document.querySelectorAll(".cell");
-        const board = [];
-        cells.forEach(cell => {
-          let val = cell.innerText;
-          if(val === "") { val = "0"; }
-          board.push(parseInt(val));
-        });
-        let board2D = [];
-        for (let i=0; i<5; i++){
-          board2D.push(board.slice(i*5, i*5+5));
-        }
-        document.getElementById("boardState").innerText = JSON.stringify(board2D, null, 2);
-      }
-      ReactDOM.render(<DragAndDropBoard />, document.getElementById("root"));
-    </script>
-  </body>
-</html>
-"""
+######################################
+# 盤面入力 UI (各セルごとの数値入力)
+######################################
+st.title("Merge Game Simulator")
+st.write("下のグリッドに盤面の各セルの値を入力してください（空の場合は 0 と入力してください）。")
 
-###################################
-# Render Drag-and-Drop UI component
-###################################
-components.html(html_code, height=900, scrolling=True)
+initial_board = []
+for r in range(BOARD_SIZE):
+    cols = st.columns(BOARD_SIZE)
+    row = []
+    for c in range(BOARD_SIZE):
+        # 例として初期値はすべて 0 （またはお好みの値）
+        val = cols[c].number_input(f"R{r+1}C{c+1}", min_value=0, max_value=100, value=0, key=f"{r}_{c}")
+        row.append(val)
+    initial_board.append(row)
 
-st.markdown("### Board Configuration from Component")
-st.write("1. Use the component above to arrange the board by dragging pieces from the Piece Bank into a board cell.")
-st.write("2. Click **Send Board Configuration** to see the board as JSON.")
-st.write("3. Copy that JSON into the text area below and click **Simulate Board**.")
+max_value = st.number_input("最大合成値 (max_value):", min_value=1, value=20)
 
-board_json_input = st.text_area("Paste Board JSON here:", height=150)
-
-###################################
-# Simulation UI: Process Board JSON and run simulation
-###################################
-if st.button("Simulate Board"):
-    try:
-        board_raw = json.loads(board_json_input)
-        # Convert board: treat 0 as empty -> None
-        for r in range(len(board_raw)):
-            for c in range(len(board_raw[r])):
-                if board_raw[r][c] == 0:
-                    board_raw[r][c] = None
-        simulator = MergeGameSimulator(board_raw)
-        best_action_fall, max_fall, best_action_merged, max_merged, best_action_fall_hr, best_action_merged_hr, fall_merge, merge_fall = simulator.find_best_action(max_value=20)
-        st.write(f"**Best action by fall**: {best_action_fall_hr}, Fall count: {max_fall}, Merged count: {fall_merge}")
-        st.write(f"**Best action by merged count**: {best_action_merged_hr}, Fall count: {merge_fall}, Merged count: {max_merged}")
-        st.markdown("#### Simulation for Best action by fall")
-        simulator.simulate(best_action_fall, max_value=20, suppress_output=False)
-        st.markdown("#### Simulation for Best action by merged count")
-        simulator.simulate(best_action_merged, max_value=20, suppress_output=False)
-    except Exception as e:
-        st.error(f"Error: {e}")
+######################################
+# シミュレーション実行
+######################################
+if st.button("Simulate"):
+    # 入力盤面の変換: 0 は空セルとして扱う（None に変換）
+    board = copy.deepcopy(initial_board)
+    for r in range(BOARD_SIZE):
+        for c in range(BOARD_SIZE):
+            if board[r][c] == 0:
+                board[r][c] = None
+    st.write("### 入力盤面")
+    st.table(initial_board)
+    simulator = MergeGameSimulator(board)
+    best_action_fall, max_fall, best_action_merged, max_merged, best_action_fall_hr, best_action_merged_hr, fall_merge, merge_fall = simulator.find_best_action(max_value=max_value)
+    st.write(f"**Best action by fall:** {best_action_fall_hr}, Fall count: {max_fall}, Merged count: {fall_merge}")
+    st.write(f"**Best action by merged count:** {best_action_merged_hr}, Fall count: {merge_fall}, Merged count: {max_merged}")
+    st.markdown("#### Simulation (Best action by fall)")
+    simulator.simulate(best_action_fall, max_value=max_value, suppress_output=False)
+    st.markdown("#### Simulation (Best action by merged count)")
+    simulator.simulate(best_action_merged, max_value=max_value, suppress_output=False)
