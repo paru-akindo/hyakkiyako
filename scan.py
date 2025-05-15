@@ -7,30 +7,23 @@ BOARD_SIZE = 5
 # **スマホ対応のカスタムCSS**
 st.markdown("""
 <style>
-/* 各セルを横並びに固定（スマホ表示時も崩れない） */
+/* 各セルの最小幅を確保（スマホで崩れず、PCでは狭くなりすぎない） */
 div[data-testid="stHorizontalBlock"] > div {
-    flex: 0 0 60px;
-    max-width: 60px;
-}
-
-/* セルのデザイン（サイズ固定） */
-.cell-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 5px;
-    margin-bottom: 20px;
-}
-
-.cell {
-    width: 60px;
-    height: 60px;
-    border: 1px solid #ccc;
+    min-width: 80px;
+    flex: 1 1 auto;
     text-align: center;
-    vertical-align: middle;
-    line-height: 60px;
-    font-size: 24px;
-    background-color: #fafafa;
+}
+
+/* スマホでは表示サイズを調整 */
+@media (max-width: 600px) {
+    div[data-testid="stHorizontalBlock"] > div {
+        min-width: 60px;
+    }
+}
+
+/* ラベルを削除（スマホで省スペース化） */
+label[for^="R"] {
+    display: none;
 }
 </style>
 """, unsafe_allow_html=True)
