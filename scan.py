@@ -42,22 +42,6 @@ div[data-testid="stHorizontalBlock"] > div {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("スマホ対応版 Merge Game Simulator")
-
-# 各セルの数値入力をグリッド状に表示
-initial_board = []
-for r in range(BOARD_SIZE):
-    cols = st.columns(BOARD_SIZE)
-    row = []
-    for c in range(BOARD_SIZE):
-        val = cols[c].number_input(f"R{r+1}C{c+1}", min_value=0, max_value=100, value=0, key=f"{r}_{c}")
-        row.append(val)
-    initial_board.append(row)
-
-# 入力完了後、盤面を確認できるように表示
-st.markdown("### 入力した盤面")
-st.table(initial_board)
-
 ######################################
 # シミュレーションロジック
 ######################################
@@ -152,10 +136,9 @@ class MergeGameSimulator:
 ######################################
 # 盤面入力 UI
 ######################################
-st.title("Merge Game Simulator - スマホ対応版")
-st.write("各セルに数値を入力してください。（空の場合は 0）")
+st.title("スマホ対応版 Merge Game Simulator")
 
-# 入力盤面
+# 各セルの数値入力をグリッド状に表示
 initial_board = []
 for r in range(BOARD_SIZE):
     cols = st.columns(BOARD_SIZE)
@@ -164,6 +147,10 @@ for r in range(BOARD_SIZE):
         val = cols[c].number_input(f"R{r+1}C{c+1}", min_value=0, max_value=100, value=0, key=f"{r}_{c}")
         row.append(val)
     initial_board.append(row)
+
+# 入力完了後、盤面を確認できるように表示
+st.markdown("### 入力した盤面")
+st.table(initial_board)
 
 max_value = st.number_input("最大合成値 (max_value):", min_value=1, value=20)
 
