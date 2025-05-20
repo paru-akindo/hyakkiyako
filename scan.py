@@ -189,3 +189,63 @@ if input_method == "グリッド入力":
         new_value = st.slider("新しい値を選択", min_value=0, max_value=st.session_state.max_value,
                               value=st.session_state.grid_board_values[r][c],
                               key=f"grid_slider_{r}_{c}")
+        if st.button("確定", key=f"grid_confirm_{r}_{c}"):
+            st.session_state.grid_board_values[r][c] = new_value
+            st.session_state.selected_cell = None
+        if st.button("キャンセル", key=f"grid_cancel_{r}_{c}"):
+            st.session_state.selected_cell = None
+    board = st.session_state.grid_board_values
+
+# カンマ区切りテキスト入力モード
+else:
+    st.subheader("カンマ区切りテキスト入力")
+    csv_input = st.text_area("5行のカンマ区切りで盤面を入力", value=st.session_state.csv_board_values, height=150)
+    st.session_state.csv_board_values = csv_input
+    try:
+        lines = csv_input.strip().splitlines()
+        parsed_board = []
+        for line in lines:
+            values = [int(v.strip()) for v in line.split(",")]
+            if len(values) != BOARD_SIZE:
+                st.error("各行に5つの数値が必要です。")
+                parsed_board = None
+                break
+            parsed_board.append(values)
+        if parsed_board is not None and len(parsed_board) != BOARD_SIZE:
+            st.error("5行入力してください。")
+            parsed_board = None
+    except Exception as e:
+        st.error(f"入力解析エラー: {e}")
+        parsed_board = None
+    board = parsed_board
+
+if board is not None:
+    st.subheader("入力された盤面")
+    st.table(board)
+
+simulate_button = st.button("Simulate (最適アクション評価＆連鎖シミュレーション)")
+
+if simulate_button:
+    if board is None:
+        st.error("盤面が正しく入力されていません。")
+    else:
+        simulator = MergeGameSimulator(board)
+        max_value = st.session_state.max_value
+        
+        # 最適アクション評価結果を expander 内に表示
+        with st.expander("最適なアクション評価結果", expanded=True):
+            best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers, fall_merge_n, merge_fall_n = simulator.find_best_action(max_value=max_value)
+            if best_action_by_fall:
+                r, c = best_action_by_fall[1], best_action_by_fall[2]
+                st.write(f"【落下回数最大】: {best_action_by_fall[0]} ({r+1},{c+1}) → Fall count: {max_fall_count}, Merged: {fall_merge_n}")
+            if best_action_by_merged:
+                r, c = best_action_by_merged[1], best_action_by_merged[2]
+                st.write(f"【合成セル数最大】: {best_action_by_merged[0]} ({r+1},{c+1}) → Fall count: {merge_fall_n}, Merged: {max_total_merged_numbers}")
+        
+        # シミュレーション結果を個別に expander で表示
+        with st.expander("シミュレーション結果：落下回数最大の操作", expanded=True):
+            if best_action_by_fall:
+                simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=False)
+        with st.expander("シミュレーション結果：合成セル数最大の操作", expanded=False):
+            if best_action_by_merged:
+                simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=False)
