@@ -1,9 +1,17 @@
 import streamlit as st
 import copy
+import pandas as pd
 
 # 定数
 BOARD_SIZE = 5
 DEFAULT_MAX_VALUE = 20
+
+def format_board(board):
+    """盤面を pandas の DataFrame に変換（行・列のラベルは1始まり）"""
+    df = pd.DataFrame(board)
+    df.index = [i+1 for i in range(len(df))]
+    df.columns = [i+1 for i in range(len(df.columns))]
+    return df
 
 # ----------------------------
 # MergeGameSimulator クラス
@@ -13,9 +21,8 @@ class MergeGameSimulator:
         self.board = board  # 初期盤面
 
     def display_board(self, board):
-        """盤面をテキスト形式で表示"""
-        for row in board:
-            st.write(" ".join(f"{cell:2}" if cell is not None else " . " for cell in row))
+        """盤面をテーブル形式で表示（1～BOARD_SIZEのラベル付き）"""
+        st.table(format_board(board))
         st.markdown("---")
 
     def find_clusters(self, board):
@@ -102,7 +109,6 @@ class MergeGameSimulator:
             clusters = self.find_clusters(board)
             if not clusters:
                 break
-            # 変数 fall は未定義なので、代わりに fall_count を渡す
             total_merged_numbers += self.merge_clusters(board, clusters, fall_count, user_action=action, max_value=max_value)
             self.apply_gravity(board)
             fall_count += 1
@@ -222,7 +228,7 @@ else:
 
 if board is not None:
     st.subheader("入力された盤面")
-    st.table(board)
+    st.table(format_board(board))
 
 simulate_button = st.button("Simulate (最適アクション評価＆連鎖シミュレーション)")
 
@@ -233,7 +239,7 @@ if simulate_button:
         simulator = MergeGameSimulator(board)
         max_value = st.session_state.max_value
         
-        # 最適アクション評価結果の表示（expander で全体概要も出す）
+        # 最適アクション評価結果の表示（expander で全体概要を確認）
         with st.expander("最適なアクション評価結果", expanded=True):
             best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers, fall_merge_n, merge_fall_n = simulator.find_best_action(max_value=max_value)
             if best_action_by_fall:
