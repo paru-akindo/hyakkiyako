@@ -197,10 +197,10 @@ class MergeGameSimulator:
 # ----------------------------
 # Streamlit アプリ本体
 # ----------------------------
-st.title("Merge Game Simulator v2")
+st.title("百鬼夜行シミュレータ")
 
 # 盤面の入力方法の選択
-input_method = st.radio("盤面の入力方法を選択", ("グリッド入力", "カンマ区切りテキスト入力"))
+input_method = st.radio("盤面の入力方法を選択", ("カンマ区切りテキスト入力", "グリッド入力"))
 
 # セッション状態の初期化
 if "grid_board_values" not in st.session_state:
@@ -273,7 +273,7 @@ if board is not None:
     st.subheader("入力された盤面")
     st.table(format_board(board))
 
-simulate_button = st.button("Simulate (最適アクション評価＆連鎖シミュレーション)")
+simulate_button = st.button("実行")
 
 if simulate_button:
     if board is None:
