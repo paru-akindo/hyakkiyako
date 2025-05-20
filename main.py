@@ -24,7 +24,7 @@ def format_board(board, action=None):
         styled = pd.DataFrame("", index=df.index, columns=df.columns)
         if action is not None:
             act_type, act_r, act_c = action
-            # DataFrame上は1始まり
+            # DataFrame 上は 1 始まり
             if act_type == "add":
                 styled.at[act_r+1, act_c+1] = "background-color: red"
             elif act_type == "remove":
@@ -55,6 +55,7 @@ class MergeGameSimulator:
         """隣接する同じ数字のクラスターを探す"""
         visited = [[False] * BOARD_SIZE for _ in range(BOARD_SIZE)]
         clusters = []
+
         def dfs(r, c, value):
             if r < 0 or r >= BOARD_SIZE or c < 0 or c >= BOARD_SIZE:
                 return []
@@ -63,8 +64,9 @@ class MergeGameSimulator:
             visited[r][c] = True
             cluster = [(r, c)]
             for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                cluster.extend(dfs(r+dr, c+dc, value))
+                cluster.extend(dfs(r + dr, c + dc, value))
             return cluster
+
         for r in range(BOARD_SIZE):
             for c in range(BOARD_SIZE):
                 if board[r][c] is not None and not visited[r][c]:
@@ -81,6 +83,7 @@ class MergeGameSimulator:
             base_value = values[0]
             new_value = base_value + (len(cluster) - 2)
             total_merged_numbers += len(cluster)
+
             if user_action and user_action[0] == "add":
                 if fall == 0:
                     target_r, target_c = user_action[1], user_action[2]
@@ -98,7 +101,7 @@ class MergeGameSimulator:
         """各列ごとに数字を下に落下させる"""
         for c in range(BOARD_SIZE):
             column = [board[r][c] for r in range(BOARD_SIZE) if board[r][c] is not None]
-            for r in range(BOARD_SIZE-1, -1, -1):
+            for r in range(BOARD_SIZE - 1, -1, -1):
                 board[r][c] = column.pop() if column else None
 
     def simulate(self, action, max_value=20, suppress_output=False):
@@ -137,7 +140,7 @@ class MergeGameSimulator:
         """
         盤面全体に対して "add" と "remove" 両方を試行し、
         1手の場合の最適な操作を見つける。
-        戻り値は候補のリスト［アクション, 合成セル数, 落下回数, 結果盤面］。
+        戻り値は候補の辞書 { 'action': (op, r, c), 'merged': merged, 'fall': fall, 'board': board_after }。
         """
         candidates = []
         for r in range(BOARD_SIZE):
@@ -155,15 +158,16 @@ class MergeGameSimulator:
         best = max(candidates, key=lambda x: x['merged'])
         return best
 
-    def find_best_action_multistep(self, max_value=20, threshold=5):
+    def find_best_action_multistep(self, max_value=20, threshold=6):
         """
-        1手シミュレーションの最適解をまず求め、合成セルが threshold 以下の場合は、
-        その盤面を初期盤面とした2手先までの最適解も評価する。
+        1手シミュレーションの最適解をまず求め、合成セル数が threshold 未満の場合は、
+        その盤面を初期盤面として2手先までの最適解も評価する。
         戻り値は辞書形式で、'one_move' に1手最適解、'two_moves' に2手シーケンスの最適解（アクションのタプルと合計合成数）を返す。
+        ただし、1手目で合成セル数が6以上の場合は、従来通りの1手最適解のみの出力とします。
         """
         one_move = self.find_best_action(max_value=max_value)
         result = {'one_move': one_move, 'two_moves': None}
-        if one_move['merged'] > threshold:
+        if one_move['merged'] >= threshold:
             return result
         # 1手目の結果から、2手目候補を探索する
         best_total = one_move['merged']
@@ -216,14 +220,15 @@ if input_method == "グリッド入力":
     if st.session_state.selected_cell is not None:
         r, c = st.session_state.selected_cell
         st.subheader(f"({r+1},{c+1}) の値を変更")
-        new_value = st.slider("新しい値を選択", min_value=0, max_value=st.session_state.max_value, value=st.session_state.grid_board_values[r][c], key=f"grid_slider_{r}_{c}")
+        new_value = st.slider("新しい値を選択", min_value=0, max_value=st.session_state.max_value,
+                              value=st.session_state.grid_board_values[r][c],
+                              key=f"grid_slider_{r}_{c}")
         if st.button("確定", key=f"grid_confirm_{r}_{c}"):
             st.session_state.grid_board_values[r][c] = new_value
             st.session_state.selected_cell = None
         if st.button("キャンセル", key=f"grid_cancel_{r}_{c}"):
             st.session_state.selected_cell = None
     board = st.session_state.grid_board_values
-# カンマ区切りテキスト入力モード
 else:
     st.subheader("カンマ区切りテキスト入力")
     csv_input = st.text_area("5行のカンマ区切りで盤面を入力", value=st.session_state.csv_board_values, height=150)
@@ -259,8 +264,7 @@ if simulate_button:
         simulator = MergeGameSimulator(board)
         max_value = st.session_state.max_value
         
-        # 1手と2手先の最適解を同時に評価
-        multi_result = simulator.find_best_action_multistep(max_value=max_value, threshold=5)
+        multi_result = simulator.find_best_action_multistep(max_value=max_value, threshold=6)
         one_move = multi_result['one_move']
         st.subheader("1手最適解")
         r, c = one_move['action'][1], one_move['action'][2]
@@ -274,9 +278,8 @@ if simulate_button:
             st.write(f"1手目: 【{actions[0][0]}】 ({actions[0][1]+1},{actions[0][2]+1}), 2手目: 【{actions[1][0]}】 ({actions[1][1]+1},{actions[1][2]+1})")
             st.write(f"合計合成セル数: {two_moves['merged']}")
         else:
-            st.write("合成セル数が5を超えるため、2手先の評価は行いません。")
+            st.write("1手目の最適解の合成セル数が6以上のため、2手先の評価は行いません。")
         
-        # 表示としては左右に分けて1手シミュレーション結果と2手シミュレーション結果（該当する場合）を表示できます。
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("シミュレーション結果：1手最適解")
@@ -284,10 +287,9 @@ if simulate_button:
         with col2:
             st.subheader("シミュレーション結果：2手最適解")
             if two_moves is not None:
-                # 1手目のシミュレーション
                 sim1 = simulator.simulate(actions[0], max_value=max_value, suppress_output=True)
                 board_after1 = sim1[2]
                 sim2 = MergeGameSimulator(board_after1)
                 sim2.simulate(actions[1], max_value=max_value, suppress_output=False)
             else:
-                st.write("2手最適解はありません。")
+                st.write("2手最適解は評価されません。")
