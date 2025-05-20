@@ -11,13 +11,14 @@ def format_board(board, action=None):
     盤面 (list-of-lists) を pandas の DataFrame に変換する。
     ・None（欠損値）は0に置換し、すべて整数で表示する。
     ・行・列ラベルは1〜BOARD_SIZEに設定する。
-    ・action が指定されている場合（("add", r, c) または ("remove", r, c)）は、
+    ・action が指定される場合（("add", r, c) または ("remove", r, c)）は、
       対象セルを "add" は赤、"remove" は青でハイライトする。
+    ・ヘッダーのラベルは灰色で表示。
     """
     df = pd.DataFrame(board)
     df = df.fillna(0).astype(int)
-    df.index = [i+1 for i in range(len(df))]
-    df.columns = [i+1 for i in range(len(df.columns))]
+    df.index = [i + 1 for i in range(len(df))]
+    df.columns = [i + 1 for i in range(len(df.columns))]
     
     def highlight_action(df):
         styled = pd.DataFrame("", index=df.index, columns=df.columns)
@@ -31,8 +32,8 @@ def format_board(board, action=None):
 
     styler = df.style.apply(highlight_action, axis=None)
     header_styles = [
-        {'selector': 'th.col_heading.level0', 'props': 'background-color: lightgray;'},
-        {'selector': 'th.row_heading.level0', 'props': 'background-color: lightgray;'}
+        {'selector': 'th.col_heading.level0', 'props': 'background-color: gray;'},
+        {'selector': 'th.row_heading.level0', 'props': 'background-color: gray;'}
     ]
     styler = styler.set_table_styles(header_styles)
     return styler
@@ -74,7 +75,7 @@ class MergeGameSimulator:
     def merge_clusters(self, board, clusters, fall, user_action=None, max_value=20):
         """
         検出したクラスタを合成し、合成されたセル数を返す。
-        user_action が指定されている場合は、1手目ではその操作対象セルを優先的に更新する。
+        user_action が指定されている場合は、1手目ではその対象セルを優先的に更新する。
         """
         total_merged_numbers = 0
         for cluster in clusters:
@@ -106,8 +107,8 @@ class MergeGameSimulator:
         """
         指定したアクション（("add", r, c) または ("remove", r, c)）を適用したときの連鎖シミュレーションを行う。
         初期盤面は対象セルをハイライトして表示する（suppress_output=Falseの場合）。
-        戻り値は (fall_count, total_merged_numbers, 最終盤面)。
-        ※ すでに空（None）になっているセルには "add" は適用されない。
+        すでに空（None）のセルには "add" は適用されません。
+        戻り値: (fall_count, total_merged_numbers, 最終盤面)
         """
         board = copy.deepcopy(self.board)
         if not suppress_output:
@@ -138,7 +139,7 @@ class MergeGameSimulator:
     def find_best_action(self, max_value=20):
         """
         盤面全体に対して "add" と "remove" を試行し、
-        1手目のみのシミュレーションで最適な操作（合成セル数優先）を求める。
+        1手のみのシミュレーションで最適な操作（合成セル数優先）を求める。
         戻り値は辞書 {'action': (op, r, c), 'merged': 合成セル数, 'fall': 落下回数, 'board': 最終盤面}。
         """
         candidates = []
@@ -160,7 +161,7 @@ class MergeGameSimulator:
     def find_best_action_by_fall(self, max_value=20):
         """
         盤面全体に対して "add" と "remove" を試行し、
-        1手目のみでのシミュレーションで最適な操作（落下回数優先）を求める。
+        1手のみのシミュレーションで最適な操作（落下回数優先）を求める。
         戻り値は find_best_action と同じ形式の辞書。
         """
         candidates = []
@@ -181,8 +182,8 @@ class MergeGameSimulator:
 
     def find_best_action_multistep(self, max_value=20, threshold=6):
         """
-        全パターンの2手候補を初めから網羅的に検証する方式。
-        盤面全体に対して、すべての1手目候補と、その後のすべての2手目候補を試行し、
+        全パターンの2手候補を最初から網羅的に検証する方式。
+        盤面全体に対して、全ての1手候補と、その後のすべての2手候補を試行し、
         1手目＋2手目の合計効果（合成セル数）が最大となる操作シーケンスを求める。
         戻り値は辞書 {'one_move': 1手目候補, 'two_moves': 2手シーケンス候補（あれば）}。
         """
@@ -204,7 +205,7 @@ class MergeGameSimulator:
         
         best_total = one_move['merged']
         best_sequence = (one_move['action'], None)
-        # 各1手目候補について2手目を網羅的に評価（初めから全パターンを検証）
+        # 各1手候補について、2手目を網羅的に評価
         for cand in candidates_1:
             temp_board = cand['board']
             simul2 = MergeGameSimulator(temp_board)
@@ -300,25 +301,39 @@ if simulate_button:
     else:
         simulator = MergeGameSimulator(board)
         max_value = st.session_state.max_value
-        
-        # 1手目と2手候補を網羅的に検証
+
+        # 1手目および全パターンの2手候補を網羅的に検証
         multi_result = simulator.find_best_action_multistep(max_value=max_value, threshold=6)
         one_move = multi_result['one_move']
         two_moves = multi_result['two_moves']
-        
-        # どんな状態でも1手目のみの結果は必ず表示
-        st.subheader("1手最適解")
-        st.write(f"【{one_move['action'][0]}】 ({one_move['action'][1]+1},{one_move['action'][2]+1}) → 合成セル数: {one_move['merged']}, 落下回数: {one_move['fall']}")
-        st.dataframe(format_board(one_move['board']))
-        st.write("1手シミュレーションの流れ:")
-        simulator.simulate(one_move['action'], max_value=max_value, suppress_output=False)
-        
+
+        # 常に1手目のみの結果を表示（左上：1手の連鎖数、右上：1手の合成セル数）
+        col_top1, col_top2 = st.columns(2)
+        with col_top1:
+            best_by_fall = simulator.find_best_action_by_fall(max_value=max_value)
+            st.subheader("1手の連鎖数")
+            st.write(f"【{best_by_fall['action'][0]}】 ({best_by_fall['action'][1]+1},{best_by_fall['action'][2]+1})")
+            st.write(f"落下回数: {best_by_fall['fall']}")
+            st.dataframe(format_board(best_by_fall['board']))
+            st.write("1手シミュレーションの流れ:")
+            simulator.simulate(best_by_fall['action'], max_value=max_value, suppress_output=False)
+        with col_top2:
+            best_by_merged = simulator.find_best_action(max_value=max_value)
+            st.subheader("1手の合成数")
+            st.write(f"【{best_by_merged['action'][0]}】 ({best_by_merged['action'][1]+1},{best_by_merged['action'][2]+1})")
+            st.write(f"合成セル数: {best_by_merged['merged']}")
+            st.dataframe(format_board(best_by_merged['board']))
+            st.write("1手シミュレーションの流れ:")
+            simulator.simulate(best_by_merged['action'], max_value=max_value, suppress_output=False)
+
+        # 2手候補がある場合、下部に2手の結果（合成数）を表示
         if two_moves is not None:
-            st.subheader("2手最適解（合成セル数評価）")
             actions = two_moves['actions']
-            st.write(f"1手目: 【{actions[0][0]}】 ({actions[0][1]+1},{actions[0][2]+1}), 2手目: 【{actions[1][0]}】 ({actions[1][1]+1},{actions[1][2]+1})")
+            st.subheader("2手の合成数")
+            st.write(f"1手目: 【{actions[0][0]}】 ({actions[0][1]+1},{actions[0][2]+1})")
+            st.write(f"2手目: 【{actions[1][0]}】 ({actions[1][1]+1},{actions[1][2]+1})")
             st.write(f"合計合成セル数: {two_moves['merged']}")
-            st.subheader("2手シミュレーション結果")
+            st.subheader("2手シミュレーションの流れ")
             st.write("【1手目の操作】")
             sim1 = simulator.simulate(actions[0], max_value=max_value, suppress_output=False)
             board_after1 = sim1[2]
