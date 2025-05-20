@@ -252,19 +252,23 @@ if input_method == "グリッド入力":
     for r in range(BOARD_SIZE):
         cols = st.columns(BOARD_SIZE)
         for c in range(BOARD_SIZE):
-            if cols[c].button(f"({r+1},{c+1}): {st.session_state.grid_board_values[r][c]}", key=f"grid_btn_{r}_{c}"):
+            # ボタンラベルは座標情報を削除し、現状の数字だけを表示する
+            if cols[c].button(f"{st.session_state.grid_board_values[r][c]}", key=f"grid_btn_{r}_{c}"):
                 st.session_state.selected_cell = (r, c)
     if st.session_state.selected_cell is not None:
         r, c = st.session_state.selected_cell
-        st.subheader(f"({r+1},{c+1}) の値を変更")
-        new_value = st.slider("新しい値を選択", min_value=0, max_value=st.session_state.max_value,
-                              value=st.session_state.grid_board_values[r][c], key=f"grid_slider_{r}_{c}")
+        st.subheader(f"セルの値を変更")
+        new_value = st.slider("新しい値を選択", min_value=0,
+                              max_value=st.session_state.max_value,
+                              value=st.session_state.grid_board_values[r][c],
+                              key=f"grid_slider_{r}_{c}")
         if st.button("確定", key=f"grid_confirm_{r}_{c}"):
             st.session_state.grid_board_values[r][c] = new_value
             st.session_state.selected_cell = None
         if st.button("キャンセル", key=f"grid_cancel_{r}_{c}"):
             st.session_state.selected_cell = None
     board = st.session_state.grid_board_values
+
 else:
     st.subheader("カンマ区切りテキスト入力")
     csv_input = st.text_area("5行のカンマ区切りで盤面を入力",
