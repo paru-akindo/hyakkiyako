@@ -206,7 +206,7 @@ input_method = st.radio("盤面の入力方法を選択", ("グリッド入力",
 if "grid_board_values" not in st.session_state:
     st.session_state.grid_board_values = [[8] * BOARD_SIZE for _ in range(BOARD_SIZE)]
 if "csv_board_values" not in st.session_state:
-    default_csv = "8,8,6,5,6\n8,8,6,5,6\n8,8,6,5,6\n8,8,6,5,6\n8,8,6,5,6"
+    default_csv = "5,5,4,5,5\n4,5,5,4,5\n5,4,5,5,4\n5,5,4,5,5\n4,5,5,4,5"
     st.session_state.csv_board_values = default_csv
 if "selected_cell" not in st.session_state:
     st.session_state.selected_cell = None
