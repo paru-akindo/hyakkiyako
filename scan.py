@@ -7,8 +7,11 @@ BOARD_SIZE = 5
 DEFAULT_MAX_VALUE = 20
 
 def format_board(board):
-    """盤面を pandas の DataFrame に変換（行・列のラベルは1始まり）"""
+    """盤面を pandas の DataFrame に変換（行・列のラベルは1始まり）。
+       欠損値 (None) は 0 に置換し、すべて整数で表示する。
+    """
     df = pd.DataFrame(board)
+    df = df.fillna(0).astype(int)  # None を 0 にして、整数型に変換
     df.index = [i+1 for i in range(len(df))]
     df.columns = [i+1 for i in range(len(df.columns))]
     return df
