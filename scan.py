@@ -6,15 +6,46 @@ import pandas as pd
 BOARD_SIZE = 5
 DEFAULT_MAX_VALUE = 20
 
-def format_board(board):
-    """盤面を pandas の DataFrame に変換（行・列のラベルは1始まり）。
-       欠損値 (None) は 0 に置換し、すべて整数で表示する。
+def format_board(board, action=None):
+    """
+    盤面 (list-of-lists) を pandas の DataFrame に変換する。
+    ・None (欠損値) は 0 に置換し、すべて整数で表示。
+    ・行・列のラベルは 1～BOARD_SIZE に設定。
+    ・オプションの action が指定されている場合（例: ("add", r, c) または ("remove", r, c)）は、
+      該当セルに対して "add" なら赤、"remove" なら青の背景色を適用。
+    ・ヘッダーはグレーに設定。
     """
     df = pd.DataFrame(board)
-    df = df.fillna(0).astype(int)  # None を 0 にして、整数型に変換
+    df = df.fillna(0).astype(int)
+    # インデックス、カラムは 1始まりに
     df.index = [i+1 for i in range(len(df))]
     df.columns = [i+1 for i in range(len(df.columns))]
-    return df
+
+    # スタイル付け用のセルごとの関数
+    def highlight_action(df):
+        """DataFrame 全体に対して、action 対象のセルのみ色付けする。
+           action のセルは、内部では0始まりとなるので、DataFrame上では index+1, col+1 で指定。
+        """
+        styled = pd.DataFrame("", index=df.index, columns=df.columns)
+        if action is not None:
+            act_type, act_r, act_c = action
+            # act_r, act_c は 0-based。DataFrame の行・列は 1-basedなので調整する
+            if act_type == "add":
+                styled.at[act_r+1, act_c+1] = "background-color: red"
+            elif act_type == "remove":
+                styled.at[act_r+1, act_c+1] = "background-color: blue"
+        return styled
+
+    # Styler を作成し、セルの条件付きスタイルを適用
+    styler = df.style.apply(highlight_action, axis=None)
+    
+    # ヘッダー部分 (row, col のラベル) をグレーにするスタイル指定
+    header_styles = [
+        {'selector': 'th.col_heading.level0', 'props': 'background-color: lightgray;'},
+        {'selector': 'th.row_heading.level0', 'props': 'background-color: lightgray;'}
+    ]
+    styler = styler.set_table_styles(header_styles)
+    return styler
 
 # ----------------------------
 # MergeGameSimulator クラス
@@ -23,9 +54,9 @@ class MergeGameSimulator:
     def __init__(self, board):
         self.board = board  # 初期盤面
 
-    def display_board(self, board):
-        """盤面をテーブル形式で表示（1～BOARD_SIZEのラベル付き）"""
-        st.table(format_board(board))
+    def display_board(self, board, action=None):
+        """盤面をテーブル形式で表示（1～BOARD_SIZEのラベル付き、必要なら action に基づく色付け）"""
+        st.table(format_board(board, action))
         st.markdown("---")
 
     def find_clusters(self, board):
@@ -89,11 +120,13 @@ class MergeGameSimulator:
         """
         指定したアクション（("add", r, c) または ("remove", r, c)）を盤面に適用し、
         連鎖（合成＋落下）をシミュレートする。
+        初期盤面の表示時は、対象セルに色付け（"add"なら赤、"remove"なら青）を反映する。
         """
         board = copy.deepcopy(self.board)
         if not suppress_output:
             st.write("Initial board:")
-            self.display_board(board)
+            # 初期盤面表示の際、action を渡して対象セルの色付けを行う
+            self.display_board(board, action=action)
 
         # ユーザー操作の適用
         if action[0] == "add":
@@ -117,8 +150,8 @@ class MergeGameSimulator:
             fall_count += 1
             if not suppress_output:
                 st.write(f"After fall {fall_count}:")
+                # シミュレーション中は通常の表示（色付けなし）
                 self.display_board(board)
-
         return fall_count, total_merged_numbers, board
 
     def find_best_action(self, max_value=20):
@@ -181,7 +214,10 @@ if "max_value" not in st.session_state:
     st.session_state.max_value = DEFAULT_MAX_VALUE
 
 st.subheader("最大合成値の設定")
-st.session_state.max_value = st.number_input("最大合成値 (max_value)", min_value=1, value=st.session_state.max_value, key="max_value_input")
+st.session_state.max_value = st.number_input("最大合成値 (max_value)",
+                                               min_value=1,
+                                               value=st.session_state.max_value,
+                                               key="max_value_input")
 
 board = None
 # グリッド入力モード
@@ -190,13 +226,15 @@ if input_method == "グリッド入力":
     for r in range(BOARD_SIZE):
         cols = st.columns(BOARD_SIZE)
         for c in range(BOARD_SIZE):
-            # ラベルを "(r,c): 値" と表示
-            if cols[c].button(f"({r+1},{c+1}): {st.session_state.grid_board_values[r][c]}", key=f"grid_btn_{r}_{c}"):
+            if cols[c].button(f"({r+1},{c+1}): {st.session_state.grid_board_values[r][c]}", 
+                                key=f"grid_btn_{r}_{c}"):
                 st.session_state.selected_cell = (r, c)
     if st.session_state.selected_cell is not None:
         r, c = st.session_state.selected_cell
         st.subheader(f"({r+1},{c+1}) の値を変更")
-        new_value = st.slider("新しい値を選択", min_value=0, max_value=st.session_state.max_value,
+        new_value = st.slider("新しい値を選択",
+                              min_value=0,
+                              max_value=st.session_state.max_value,
                               value=st.session_state.grid_board_values[r][c],
                               key=f"grid_slider_{r}_{c}")
         if st.button("確定", key=f"grid_confirm_{r}_{c}"):
@@ -209,7 +247,9 @@ if input_method == "グリッド入力":
 # カンマ区切りテキスト入力モード
 else:
     st.subheader("カンマ区切りテキスト入力")
-    csv_input = st.text_area("5行のカンマ区切りで盤面を入力", value=st.session_state.csv_board_values, height=150)
+    csv_input = st.text_area("5行のカンマ区切りで盤面を入力",
+                             value=st.session_state.csv_board_values,
+                             height=150)
     st.session_state.csv_board_values = csv_input
     try:
         lines = csv_input.strip().splitlines()
@@ -242,7 +282,6 @@ if simulate_button:
         simulator = MergeGameSimulator(board)
         max_value = st.session_state.max_value
         
-        # 最適アクション評価結果の表示（expander で全体概要を確認）
         with st.expander("最適なアクション評価結果", expanded=True):
             best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers, fall_merge_n, merge_fall_n = simulator.find_best_action(max_value=max_value)
             if best_action_by_fall:
@@ -252,7 +291,7 @@ if simulate_button:
                 r, c = best_action_by_merged[1], best_action_by_merged[2]
                 st.write(f"【合成セル数最大】: {best_action_by_merged[0]} ({r+1},{c+1}) → Fall count: {merge_fall_n}, Merged: {max_total_merged_numbers}")
         
-        # 左右に並べてシミュレーション結果を表示する
+        # 左右に並べてシミュレーション結果を表示
         col1, col2 = st.columns(2)
         
         with col1:
