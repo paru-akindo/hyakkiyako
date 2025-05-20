@@ -102,7 +102,8 @@ class MergeGameSimulator:
             clusters = self.find_clusters(board)
             if not clusters:
                 break
-            total_merged_numbers += self.merge_clusters(board, clusters, fall, user_action=action, max_value=max_value)
+            # 修正：fall の代わりに fall_count を引数として渡す
+            total_merged_numbers += self.merge_clusters(board, clusters, fall_count, user_action=action, max_value=max_value)
             self.apply_gravity(board)
             fall_count += 1
             if not suppress_output:
