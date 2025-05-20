@@ -2,24 +2,28 @@ import streamlit as st
 import copy
 import pandas as pd
 
+import streamlit as st
+
 st.markdown(
     """
     <style>
-    /* ボタンのパディング・マージンを削減 */
+    /* ボタンの余白・パディングをさらに狭く */
     div[data-baseweb="button"] {
-         padding: 2px 4px !important;
-         margin: 1px !important;
-         font-size: 14px !important;
+         padding: 0px 2px !important;
+         margin: 0px !important;
+         font-size: 12px !important;
     }
-    /* カラムの余白を削減して横並びのスペースを確保 */
+    /* 横並びのカラム間も余白を極力なくす */
     [data-testid="stHorizontalBlock"] > div {
          padding: 0px !important;
          margin: 0px !important;
+         min-width: 0 !important;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 # 定数
 BOARD_SIZE = 5
