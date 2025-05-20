@@ -102,7 +102,7 @@ class MergeGameSimulator:
             clusters = self.find_clusters(board)
             if not clusters:
                 break
-            # 修正：fall の代わりに fall_count を引数として渡す
+            # 変数 fall は未定義なので、代わりに fall_count を渡す
             total_merged_numbers += self.merge_clusters(board, clusters, fall_count, user_action=action, max_value=max_value)
             self.apply_gravity(board)
             fall_count += 1
@@ -233,7 +233,7 @@ if simulate_button:
         simulator = MergeGameSimulator(board)
         max_value = st.session_state.max_value
         
-        # 最適アクション評価結果を expander 内に表示
+        # 最適アクション評価結果の表示（expander で全体概要も出す）
         with st.expander("最適なアクション評価結果", expanded=True):
             best_action_by_fall, max_fall_count, best_action_by_merged, max_total_merged_numbers, fall_merge_n, merge_fall_n = simulator.find_best_action(max_value=max_value)
             if best_action_by_fall:
@@ -243,10 +243,19 @@ if simulate_button:
                 r, c = best_action_by_merged[1], best_action_by_merged[2]
                 st.write(f"【合成セル数最大】: {best_action_by_merged[0]} ({r+1},{c+1}) → Fall count: {merge_fall_n}, Merged: {max_total_merged_numbers}")
         
-        # シミュレーション結果を個別に expander で表示
-        with st.expander("シミュレーション結果：落下回数最大の操作", expanded=True):
+        # 左右に並べてシミュレーション結果を表示する
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("落下回数優先シミュレーション")
             if best_action_by_fall:
                 simulator.simulate(best_action_by_fall, max_value=max_value, suppress_output=False)
-        with st.expander("シミュレーション結果：合成セル数最大の操作", expanded=False):
+            else:
+                st.write("適用可能な落下回数優先の操作はありません。")
+        
+        with col2:
+            st.subheader("合成セル数優先シミュレーション")
             if best_action_by_merged:
                 simulator.simulate(best_action_by_merged, max_value=max_value, suppress_output=False)
+            else:
+                st.write("適用可能な合成セル数優先の操作はありません。")
