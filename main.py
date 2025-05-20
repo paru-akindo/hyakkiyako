@@ -311,29 +311,29 @@ if simulate_button:
         col_top1, col_top2 = st.columns(2)
         with col_top1:
             best_by_fall = simulator.find_best_action_by_fall(max_value=max_value)
-            st.subheader("1手の連鎖数")
+            st.subheader("最大連鎖(1手)")
             st.write(f"【{best_by_fall['action'][0]}】 ({best_by_fall['action'][1]+1},{best_by_fall['action'][2]+1})")
             st.write(f"落下回数: {best_by_fall['fall']}")
             st.dataframe(format_board(best_by_fall['board']))
-            st.write("1手シミュレーションの流れ:")
+            st.write("手順:")
             simulator.simulate(best_by_fall['action'], max_value=max_value, suppress_output=False)
         with col_top2:
             best_by_merged = simulator.find_best_action(max_value=max_value)
-            st.subheader("1手の合成数")
+            st.subheader("最大合成(1手)")
             st.write(f"【{best_by_merged['action'][0]}】 ({best_by_merged['action'][1]+1},{best_by_merged['action'][2]+1})")
             st.write(f"合成セル数: {best_by_merged['merged']}")
             st.dataframe(format_board(best_by_merged['board']))
-            st.write("1手シミュレーションの流れ:")
+            st.write("手順:")
             simulator.simulate(best_by_merged['action'], max_value=max_value, suppress_output=False)
 
         # 2手候補がある場合、下部に2手の結果（合成数）を表示
         if two_moves is not None:
             actions = two_moves['actions']
-            st.subheader("2手の合成数")
+            st.subheader("最大合成(2手)")
             st.write(f"1手目: 【{actions[0][0]}】 ({actions[0][1]+1},{actions[0][2]+1})")
             st.write(f"2手目: 【{actions[1][0]}】 ({actions[1][1]+1},{actions[1][2]+1})")
             st.write(f"合計合成セル数: {two_moves['merged']}")
-            st.subheader("2手シミュレーションの流れ")
+            st.subheader("手順")
             st.write("【1手目の操作】")
             sim1 = simulator.simulate(actions[0], max_value=max_value, suppress_output=False)
             board_after1 = sim1[2]
