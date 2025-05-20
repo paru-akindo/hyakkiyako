@@ -13,12 +13,6 @@ st.markdown(
          margin: 0px !important;
          font-size: 12px !important;
     }
-    /* 横並びのカラム間も余白を極力なくす */
-    [data-testid="stHorizontalBlock"] > div {
-         padding: 0px !important;
-         margin: 0px !important;
-         min-width: 0 !important;
-    }
     </style>
     """,
     unsafe_allow_html=True
